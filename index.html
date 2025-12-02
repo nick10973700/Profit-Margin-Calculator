@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商利润计算器 Pro</title>
+    <style>
+        /* 定义颜色变量：日间模式 */
+        :root {
+            --primary-color: #3b82f6;
+            --success-color: #16a34a;
+            --danger-color: #ef4444;
+            
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --input-bg: #f9fafb;
+            --result-bg: #f1f5f9;
+            
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 定义颜色变量：夜间模式 */
+        [data-theme="dark"] {
+            --primary-color: #60a5fa;
+            --success-color: #4ade80; /* 夜间绿色更亮一点 */
+            --danger-color: #f87171;  /* 夜间红色更亮一点 */
+            
+            --bg-color: #111827;      /* 深灰背景 */
+            --card-bg: #1f2937;       /* 卡片深色 */
+            --input-bg: #374151;      /* 输入框深色 */
+            --result-bg: #111827;     /* 结果区域深色 */
+            
+            --text-main: #f9fafb;     /* 白色文字 */
+            --text-sub: #9ca3af;      /* 浅灰文字 */
+            --border-color: #374151;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            width: 100%;
+            max-width: 420px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            position: relative; /* 为了定位切换按钮 */
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        /* 主题切换按钮 */
+        .theme-toggle {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            padding: 5px;
+            border-radius: 50%;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .theme-toggle:hover {
+            background-color: var(--bg-color);
+            transform: scale(1.1);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .section-label {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-bottom: 10px;
+            font-weight: 600;
+            display: block;
+            margin-top: 15px;
+            border-left: 3px solid var(--primary-color);
+            padding-left: 8px;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            color: var(--text-main);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 10px;
+            font-size: 1.1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-sizing: border-box;
+            transition: all 0.2s;
+            background-color: var(--input-bg);
+            color: var(--text-main);
+            -moz-appearance: textfield;
+        }
+        
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* 结果区域 */
+        .result-card {
+            background-color: var(--result-bg);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 25px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, background-color 0.3s, border-color 0.3s;
+        }
+
+        .main-profit {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 10px 0;
+            transition: color 0.3s;
+        }
+        
+        .main-profit span {
+            font-size: 1rem;
+            font-weight: normal;
+            color: var(--text-sub);
+        }
+
+        .sub-metrics {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 15px;
+        }
+
+        .metric-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .metric-label {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .btn-reset {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--card-bg);
+            color: var(--text-sub);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-reset:hover {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        .text-green { color: var(--success-color) !important; }
+        .text-red { color: var(--danger-color) !important; }
+
+        /* 动画 */
+        @keyframes pulse-green {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); box-shadow: 0 0 15px rgba(22, 163, 74, 0.2); }
+            100% { transform: scale(1); }
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); box-shadow: 0 0 15px rgba(220, 38, 38, 0.2); }
+            100% { transform: scale(1); }
+        }
+        .pulse-green { animation: pulse-green 0.3s ease-in-out; }
+        .pulse-red { animation: pulse-red 0.3s ease-in-out; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 主题切换按钮 -->
+        <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="切换日/夜模式">
+            ☀️
+        </button>
+
+        <h1>💰 进货利润计算器</h1>
+
+        <!-- 第一组：核心交易数据 (已互换位置) -->
+        <span class="section-label">核心交易数据</span>
+        <div class="input-group">
+            <div class="input-wrapper">
+                <label>进货成本 (买入)</label>
+                <input type="number" id="cost" placeholder="0" inputmode="decimal">
+            </div>
+            <div class="input-wrapper">
+                <label>商品定价 (卖出)</label>
+                <input type="number" id="price" placeholder="0" inputmode="decimal">
+            </div>
+        </div>
+
+        <!-- 第二组：相关费用 -->
+        <span class="section-label">运营与杂费</span>
+        <div class="input-group">
+            <div class="input-wrapper">
+                <label>快递运费</label>
+                <input type="number" id="shipping" placeholder="0" inputmode="decimal">
+            </div>
+            <div class="input-wrapper">
+                <label>包装杂费</label>
+                <input type="number" id="misc" placeholder="0" value="0" inputmode="decimal">
+            </div>
+        </div>
+        <div class="input-wrapper">
+            <label>平台/手续费率 (%)</label>
+            <input type="number" id="feeRate" placeholder="例如淘宝填 5" value="0" inputmode="decimal">
+            <div style="font-size: 0.75rem; color: var(--text-sub); margin-top: 4px; text-align: right;">预计扣除: ¥<span id="feePreview">0.00</span></div>
+        </div>
+
+        <!-- 结果展示 -->
+        <div class="result-card" id="resultCard">
+            <div class="metric-label">预估净利润</div>
+            <div class="main-profit" id="netProfit">0.00 <span>元</span></div>
+            
+            <div class="sub-metrics">
+                <div class="metric-item">
+                    <div class="metric-label">利润率</div>
+                    <div class="metric-value" id="margin">0%</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">保本售价</div>
+                    <div class="metric-value" id="breakEven">0.00</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">总成本</div>
+                    <div class="metric-value" id="totalCost">0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-reset" onclick="resetData()">↺ 重置所有数据</button>
+    </div>
+
+    <script>
+        const inputs = ['cost', 'price', 'shipping', 'misc', 'feeRate'];
+        const els = {};
+        inputs.forEach(id => els[id] = document.getElementById(id));
+        
+        const resEls = {
+            netProfit: document.getElementById('netProfit'),
+            margin: document.getElementById('margin'),
+            breakEven: document.getElementById('breakEven'),
+            totalCost: document.getElementById('totalCost'),
+            feePreview: document.getElementById('feePreview'),
+            resultCard: document.getElementById('resultCard')
+        };
+
+        // --- 主题切换逻辑 ---
+        const themeBtn = document.getElementById('themeBtn');
+        
+        // 检查本地存储是否有保存的主题
+        const savedTheme = localStorage.getItem('profit_theme');
+        if (savedTheme) {
+            document.body.setAttribute('data-theme', savedTheme);
+            themeBtn.innerText = savedTheme === 'dark' ? '🌙' : '☀️';
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            // 如果没有保存，则跟随系统
+            document.body.setAttribute('data-theme', 'dark');
+            themeBtn.innerText = '🌙';
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.body.setAttribute('data-theme', newTheme);
+            themeBtn.innerText = newTheme === 'dark' ? '🌙' : '☀️';
+            
+            // 保存设置
+            localStorage.setItem('profit_theme', newTheme);
+        }
+
+        // --- 计算逻辑 ---
+        function calculate() {
+            const v = {};
+            inputs.forEach(id => v[id] = parseFloat(els[id].value) || 0);
+
+            // 1. 平台费 (按售价算)
+            const platformFee = v.price * (v.feeRate / 100);
+            
+            // 2. 总成本 (进货 + 运费 + 杂费 + 平台费)
+            const totalCost = v.cost + v.shipping + v.misc + platformFee;
+            
+            // 3. 净利润
+            const profit = v.price - totalCost;
+
+            // 4. 利润率
+            let margin = 0;
+            if (v.price > 0) {
+                margin = (profit / v.price) * 100;
+            }
+
+            // 5. 保本售价
+            // 售价 = 固定成本 / (1 - 费率)
+            const fixedCost = v.cost + v.shipping + v.misc;
+            let breakEven = 0;
+            if (v.feeRate < 100) {
+                breakEven = fixedCost / (1 - (v.feeRate / 100));
+            }
+
+            updateUI(profit, margin, breakEven, totalCost, platformFee);
+        }
+
+        function updateUI(profit, margin, breakEven, totalCost, platformFee) {
+            resEls.netProfit.innerHTML = profit.toFixed(2) + ' <span>元</span>';
+            resEls.margin.innerText = margin.toFixed(1) + '%';
+            resEls.breakEven.innerText = breakEven.toFixed(2);
+            resEls.totalCost.innerText = totalCost.toFixed(2);
+            resEls.feePreview.innerText = platformFee.toFixed(2);
+
+            resEls.netProfit.className = 'main-profit ' + (profit >= 0 ? 'text-green' : 'text-red');
+            resEls.margin.className = 'metric-value ' + (profit >= 0 ? 'text-green' : 'text-red');
+
+            // 动画反馈
+            resEls.resultCard.classList.remove('pulse-green', 'pulse-red');
+            void resEls.resultCard.offsetWidth; 
+            if (profit !== 0 || totalCost !== 0) {
+                resEls.resultCard.classList.add(profit >= 0 ? 'pulse-green' : 'pulse-red');
+            }
+        }
+
+        // 绑定事件
+        inputs.forEach(id => {
+            els[id].addEventListener('focus', function() { this.select(); });
+            els[id].addEventListener('input', calculate);
+        });
+
+        function resetData() {
+            inputs.forEach(id => {
+                if(id === 'feeRate' || id === 'misc') {
+                    els[id].value = '0'; 
+                } else {
+                    els[id].value = '';
+                }
+            });
+            calculate();
+            els.cost.focus(); // 重置后光标回到“进货成本”
+        }
+
+        calculate();
+    </script>
+</body>
+</html>
